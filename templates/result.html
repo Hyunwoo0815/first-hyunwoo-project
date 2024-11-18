@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>조회 결과</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        table th, table td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: center;
+        }
+
+        table th {
+            background-color: #007bff;
+            color: white;
+            font-weight: bold;
+        }
+
+        table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        table tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        /* 모바일 친화적인 디자인 */
+        @media (max-width: 600px) {
+            table, table thead, table tbody, table th, table td, table tr {
+                display: block;
+                width: 100%;
+            }
+
+            table thead tr {
+                display: none;
+            }
+
+            table tr {
+                margin-bottom: 15px;
+                display: flex;
+                flex-direction: column;
+                border: 1px solid #ddd;
+                padding: 10px;
+                border-radius: 8px;
+            }
+
+            table td {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 8px;
+                border: none;
+                font-size: 14px;
+                border-bottom: 1px solid #ddd;
+            }
+
+            table td:last-child {
+                border-bottom: none;
+            }
+
+            table td::before {
+                content: attr(data-label);
+                font-weight: bold;
+                color: #333;
+                flex-shrink: 0;
+            }
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 12px;
+            color: #aaa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚌 고속버스 일정 조회 결과</h1>
+        <table id="scheduleTable">
+            <thead>
+                <tr>
+                    <th>출발지</th>
+                    <th>도착지</th>
+                    <th>출발 시간</th>
+                    <th>요금 (원)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- 결과 데이터가 여기에 동적으로 추가됩니다 -->
+            </tbody>
+        </table>
+        <div id="noResults" style="display: none; text-align: center; color: #666; margin-top: 20px;">
+            조회된 일정이 없습니다.
+        </div>
+        <div class="footer">© 2024 Bus Schedule Finder</div>
+    </div>
+
+    <script>
+        // URL 쿼리 문자열 파싱
+        const queryString = window.location.search;
+        const urlParams = new URLSearchParams(queryString);
+
+        const depTerminalId = urlParams.get('dep_terminal_id');
+        const arrTerminalId = urlParams.get('arr_terminal_id');
+        const depDate = urlParams.get('dep_date');
+
+        // API 호출 및 결과 표시
+        async function fetchSchedule() {
+            const url = `/api/bus_schedule?dep_terminal_id=${depTerminalId}&arr_terminal_id=${arrTerminalId}&dep_date=${depDate}`;
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data.response && data.response.body && data.response.body.items) {
+                    const buses = data.response.body.items.item || [];
+                    const tableBody = document.querySelector('#scheduleTable tbody');
+                    const noResultsDiv = document.getElementById('noResults');
+
+                    if (buses.length === 0) {
+                        noResultsDiv.style.display = 'block';
+                        document.getElementById('scheduleTable').style.display = 'none';
+                    } else {
+                        noResultsDiv.style.display = 'none';
+                        buses.forEach(bus => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td data-label="출발지">${bus.depPlaceNm}</td>
+                                <td data-label="도착지">${bus.arrPlaceNm}</td>
+                                <td data-label="출발 시간">${bus.depPlandTime}</td>
+                                <td data-label="요금 (원)">${bus.charge.toLocaleString()}원</td>
+                            `;
+                            tableBody.appendChild(row);
+                        });
+                    }
+                } else {
+                    document.getElementById('noResults').textContent = "오류: 데이터를 불러오지 못했습니다.";
+                    document.getElementById('noResults').style.display = 'block';
+                    document.getElementById('scheduleTable').style.display = 'none';
+                }
+            } catch (error) {
+                document.getElementById('noResults').textContent = `오류 발생: ${error.message}`;
+                document.getElementById('noResults').style.display = 'block';
+                document.getElementById('scheduleTable').style.display = 'none';
+            }
+        }
+
+        // API 호출 실행
+        fetchSchedule();
+    </script>
+</body>
+</html>

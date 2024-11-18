@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>고속버스 일정 조회</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background-color: #ffffff;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            padding: 20px;
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            text-align: left;
+            font-size: 14px;
+            color: #555;
+            margin-bottom: 8px;
+        }
+
+        select, input {
+            padding: 10px;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-bottom: 16px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        button {
+            padding: 12px;
+            font-size: 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .footer {
+            margin-top: 20px;
+            font-size: 12px;
+            color: #aaa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚌 고속버스 일정 조회</h1>
+        <form id="scheduleForm">
+            <label for="dep_terminal_select">출발지 터미널:</label>
+            <select id="dep_terminal_select" required>
+                <option value="">출발지 터미널을 선택하세요</option>
+            </select>
+
+            <label for="arr_terminal_select">도착지 터미널:</label>
+            <select id="arr_terminal_select" required>
+                <option value="">도착지 터미널을 선택하세요</option>
+            </select>
+
+            <label for="dep_date">출발 날짜 (YYYYMMDD):</label>
+            <input type="text" id="dep_date" placeholder="예: 20240101" required>
+
+            <button type="button" id="searchBtn">일정 조회</button>
+        </form>
+        <div class="footer">© 2024 Bus Schedule Finder</div>
+    </div>
+
+    <script>
+        // 터미널 목록 로드
+        async function loadTerminals() {
+            const depSelect = document.getElementById('dep_terminal_select');
+            const arrSelect = document.getElementById('arr_terminal_select');
+            try {
+                const response = await fetch('/api/terminals');
+                const data = await response.json();
+
+                if (data.response && data.response.body && data.response.body.items) {
+                    const terminals = data.response.body.items.item || [];
+                    terminals.forEach(terminal => {
+                        const option = document.createElement('option');
+                        option.value = terminal.terminalId; // 터미널 ID
+                        option.textContent = terminal.terminalNm; // 터미널 이름
+                        depSelect.appendChild(option);
+                        arrSelect.appendChild(option.cloneNode(true));
+                    });
+                }
+            } catch (error) {
+                console.error("터미널 목록 로드 오류:", error);
+            }
+        }
+
+        // 일정 조회 버튼 클릭 이벤트
+        document.getElementById('searchBtn').addEventListener('click', function() {
+            const depTerminalId = document.getElementById('dep_terminal_select').value;
+            const arrTerminalId = document.getElementById('arr_terminal_select').value;
+            const depDate = document.getElementById('dep_date').value;
+
+            if (!depTerminalId || !arrTerminalId || !depDate) {
+                alert("모든 항목을 입력해주세요.");
+                return;
+            }
+
+            // 결과 페이지로 이동
+            const resultPageUrl = `/result?dep_terminal_id=${depTerminalId}&arr_terminal_id=${arrTerminalId}&dep_date=${depDate}`;
+            window.location.href = resultPageUrl;
+        });
+
+        // 터미널 목록 로드 호출
+        loadTerminals();
+    </script>
+</body>
+</html>
