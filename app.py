@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify, render_template
 import requests
 import xml.etree.ElementTree as ET
+import os
 
 app = Flask(__name__)
 
@@ -37,7 +38,7 @@ def get_bus_schedule(dep_terminal_id, arr_terminal_id, dep_date="20240101", resp
         "depTerminalId": dep_terminal_id,
         "arrTerminalId": arr_terminal_id,
         "depPlandTime": dep_date,
-        "numOfRows": 100,  # 한 페이지에 출력되는 데이터 수 설정
+        "numOfRows": 100,
     }
 
     response = requests.get(f"{BASE_URL}/getStrtpntAlocFndExpbusInfo", params=params)
@@ -84,7 +85,13 @@ def bus_schedule():
 def result_page():
     return render_template('result.html')
 
+# Google Cloud Functions 진입점
+def main(request):
+    """Cloud Functions 엔트리포인트"""
+    with app.request_context(request.environ):
+        return app.full_dispatch_request()
 
-
-if __name__ == '__main__':
-    app.run(debug=True)
+# Cloud Run 진입점
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 8080))  # Cloud Run에서 제공하는 PORT 환경 변수 사용
+    app.run(host="0.0.0.0", port=port)
